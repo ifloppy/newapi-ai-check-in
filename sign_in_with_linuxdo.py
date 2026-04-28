@@ -146,75 +146,79 @@ class LinuxDoSignIn:
 
                     # 如果未登录，则执行登录流程
                     if not is_logged_in:
-                        print(
-                            f"❌ {self.account_name}: Log-in faild\n"
-                            f"Current page is: {page.url}"
-                        )
-                        await take_screenshot(page, "logged_in_failed", self.account_name)
-                        return False, {"error": "Linux.do log-in failed"}, None
-                        # try:
-                        #     print(f"ℹ️ {self.account_name}: Starting to sign in linux.do")
+                        run_login_manual = os.getenv('RUN_LINUXDO_LOGIN_MANUAL')
+                        print(f"ℹ️ {self.account_name}: Run log-in manual env is {run_login_manual}")
+                        if run_login_manual != 'true':
+                            print(
+                                f"❌ {self.account_name}: Log-in faild\n"
+                                f"Current page is: {page.url}"
+                            )
+                            await take_screenshot(page, "logged_in_failed", self.account_name)
+                            return False, {"error": "Linux.do log-in failed"}, None
+                        
+                        try:
+                            print(f"ℹ️ {self.account_name}: Starting to sign in linux.do")
 
-                        #     await page.goto("https://linux.do/login", wait_until="domcontentloaded")
+                            await page.goto("https://linux.do/login", wait_until="domcontentloaded")
 
-                        #     # 检查是否在 Cloudflare 验证页面
-                        #     page_title = await page.title()
-                        #     page_content = await page.content()
+                            # 检查是否在 Cloudflare 验证页面
+                            page_title = await page.title()
+                            page_content = await page.content()
 
-                        #     if "Just a moment" in page_title or "Checking your browser" in page_content:
-                        #         print(f"ℹ️ {self.account_name}: Cloudflare challenge detected, auto-solving...")
-                        #         try:
-                        #             await solver.solve_captcha(
-                        #                 captcha_container=page, captcha_type=CaptchaType.CLOUDFLARE_INTERSTITIAL
-                        #             )
-                        #             print(f"✅ {self.account_name}: Cloudflare challenge auto-solved")
-                        #             await page.wait_for_timeout(10000)
-                        #         except Exception as solve_err:
-                        #             print(f"⚠️ {self.account_name}: Auto-solve failed: {solve_err}")
+                            if "Just a moment" in page_title or "Checking your browser" in page_content:
+                                print(f"ℹ️ {self.account_name}: Cloudflare challenge detected, auto-solving...")
+                                try:
+                                    await solver.solve_captcha(
+                                        captcha_container=page, captcha_type=CaptchaType.CLOUDFLARE_INTERSTITIAL
+                                    )
+                                    print(f"✅ {self.account_name}: Cloudflare challenge auto-solved")
+                                    await page.wait_for_timeout(10000)
+                                except Exception as solve_err:
+                                    print(f"⚠️ {self.account_name}: Auto-solve failed: {solve_err}")
 
-                        #     await page.fill("#login-account-name", self.username)
-                        #     await page.wait_for_timeout(2000)
-                        #     await page.fill("#login-account-password", self.password)
-                        #     await page.wait_for_timeout(2000)
-                        #     await page.click("#login-button")
-                        #     await page.wait_for_timeout(10000)
+                            await page.fill("#login-account-name", self.username)
+                            await page.wait_for_timeout(2000)
+                            await page.fill("#login-account-password", self.password)
+                            await page.wait_for_timeout(2000)
+                            await page.click("#login-button")
+                            await page.wait_for_timeout(10000)
 
-                        #     await save_page_content_to_file(page, "sign_in_result", self.account_name, prefix="linuxdo")
+                            await save_page_content_to_file(page, "sign_in_result", self.account_name, prefix="linuxdo")
 
-                        #     try:
-                        #         current_url = page.url
-                        #         print(f"ℹ️ {self.account_name}: Current page url is {current_url}")
-                        #         if "linux.do/challenge" in current_url:
-                        #             print(
-                        #                 f"⚠️ {self.account_name}: Cloudflare challenge detected, "
-                        #                 "Camoufox should bypass it automatically. Waiting..."
-                        #             )
-                        #             # 等待 Cloudflare 验证完成
-                        #             await page.wait_for_selector('a[href^="/oauth2/approve"]', timeout=60000)
-                        #             print(f"✅ {self.account_name}: Cloudflare challenge bypassed successfully")
+                            try:
+                                current_url = page.url
+                                print(f"ℹ️ {self.account_name}: Current page url is {current_url}")
+                                if "linux.do/challenge" in current_url:
+                                    print(
+                                        f"⚠️ {self.account_name}: Cloudflare challenge detected, "
+                                        "Camoufox should bypass it automatically. Waiting..."
+                                    )
+                                    # 等待 Cloudflare 验证完成
+                                    await page.wait_for_selector('a[href^="/oauth2/approve"]', timeout=60000)
+                                    print(f"✅ {self.account_name}: Cloudflare challenge bypassed successfully")
 
-                        #     except Exception as e:
-                        #         print(f"⚠️ {self.account_name}: Possible Cloudflare challenge: {e}")
-                        #         # 即使超时，也尝试继续
-                        #         pass
+                            except Exception as e:
+                                print(f"⚠️ {self.account_name}: Possible Cloudflare challenge: {e}")
+                                # 即使超时，也尝试继续
+                                pass
 
-                        #     # 保存新的会话状态
-                        #     await context.storage_state(path=cache_file_path)
-                        #     print(f"✅ {self.account_name}: Storage state saved to cache file")
+                            # 保存新的会话状态
+                            await context.storage_state(path=cache_file_path)
+                            print(f"✅ {self.account_name}: Storage state saved to cache file")
 
-                        # except Exception as e:
-                        #     print(f"❌ {self.account_name}: Error occurred while signing in linux.do: {e}")
-                        #     await take_screenshot(page, "signin_bypass_error", self.account_name)
-                        #     return False, {"error": "Linux.do sign-in error"}, None
+                        except Exception as e:
+                            print(f"❌ {self.account_name}: Error occurred while signing in linux.do: {e}")
+                            await take_screenshot(page, "signin_bypass_error", self.account_name)
+                            return False, {"error": "Linux.do sign-in error"}, None
 
-                        # # 登录后访问授权页面
-                        # try:
-                        #     print(f"ℹ️ {self.account_name}: Navigating to authorization page: {oauth_url}")
-                        #     await page.goto(oauth_url, wait_until="domcontentloaded")
-                        # except Exception as e:
-                            # print(f"❌ {self.account_name}: Failed to navigate to authorization page: {e}")
-                            # await take_screenshot(page, "auth_page_navigation_failed_bypass", self.account_name)
-                            # return False, {"error": "Linux.do authorization page navigation failed"}, None
+                        # 登录后访问授权页面
+                        try:
+                            print(f"ℹ️ {self.account_name}: Navigating to authorization page: {oauth_url}")
+                            await page.goto(oauth_url, wait_until="domcontentloaded")
+                        except Exception as e:
+                            print(f"❌ {self.account_name}: Failed to navigate to authorization page: {e}")
+                            await take_screenshot(page, "auth_page_navigation_failed_bypass", self.account_name)
+                            return False, {"error": "Linux.do authorization page navigation failed"}, None
 
                     try:
                         # 等待授权按钮出现，最多等待30秒
